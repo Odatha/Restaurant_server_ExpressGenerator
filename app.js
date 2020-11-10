@@ -51,43 +51,25 @@ app.use(
     store: new FileStore(),
   })
 );
-//client has to be first authorized
+//signup/logout first
+app.use("/", indexRouter);
+app.use("/users", usersRouter);
 
+//client has to be first authorized
 function auth(req, res, next) {
   console.log(req.session);
 
   if (!req.session.user) {
-    //not authorized yet
-    var authHeader = req.headers.authorization;
-    if (!authHeader) {
-      var err = new Error("You are noy authenticated!");
+    var err = new Error("You are not authenticated!");
 
-      res.setHeader("WWW-Authenticate", "Basic");
-      err.status = 401;
-      next(err);
-      return;
-    }
-    var auth = new Buffer.from(authHeader.split(" ")[1], "base64")
-      .toString()
-      .split(":"); //base64 encoded string form splitted array
-    var user = auth[0];
-    var password = auth[1];
-    if (user === "admin" && password === "password") {
-      req.session.user = "admin";
-      next();
-    } else {
-      var err = new Error("You are noy authenticated!");
-
-      res.setHeader("WWW-Authenticate", "Basic");
-      err.status = 401;
-      return next(err);
-    }
+    err.status = 401;
+    next(err);
+    return;
   } else {
-    if (req.session.user === "admin") {
+    if (req.session.user === "authenticated") {
       next();
     } else {
       var err = new Error("You are noy authenticated!");
-
       err.status = 401;
       return next(err);
     }
@@ -97,8 +79,6 @@ function auth(req, res, next) {
 app.use(auth);
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
-app.use("/users", usersRouter);
 app.use("/dishes", dishRouter);
 app.use("/promotions", promoRouter);
 app.use("/leaders", leaderRouter);
